@@ -3,3 +3,4 @@ aiogram==2.13
 requests==2.25.1
 beautifulsoup4==4.9.3
 environs~=8.0.0
+emoji==1.2.0
