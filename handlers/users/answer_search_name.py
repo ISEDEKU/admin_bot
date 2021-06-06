@@ -17,128 +17,177 @@ from states.state_class import Questions
                     user_id=ADMINS)  # хэндлер, с первым состоянием, который принимает ответ
 async def answer_search_name(message: types.Message, state=FSMContext):
     await message.answer('Ищу все товары с похожим названием...')
-    urllib.request.urlretrieve('http://aparat.ua/cli/telegram_opt.xlsx', 'out.xlsx')
-    path_to_file = os.path.abspath('out.xlsx')
-    book = openpyxl.open(path_to_file, read_only=True)  # открываем книгу, в аргументе указываем путь к файлу
-    sheet = book.active  # получаем первый и единственный лист
+    urllib.request.urlretrieve('http://aparat.ua/cli/telegram_opt.xlsx', 'main.xlsx')
+    path_to_file_1 = os.path.abspath('main.xlsx')
 
-    sheet_cells = []
+    urllib.request.urlretrieve('http://aparat.ua/xlsx/stock_balance.xlsx', 'stock_balance.xlsx ')
+    path_to_file_2 = os.path.abspath('stock_balance.xlsx ')
 
-    answer = str(message.text)  # в переменную answer помещяется то, что ответил пользователь в ТГ
+    urllib.request.urlretrieve('http://aparat.ua/xlsx/boriychuk.xlsx', 'boriychuk.xlsx')
+    path_to_file_3 = os.path.abspath('boriychuk.xlsx')
 
-    search_text = str(answer)  # переменная, хранит в себе значение, которое мы ищём
+    urllib.request.urlretrieve('http://aparat.ua/xlsx/kovel.xlsx', 'kovel.xlsx')
+    path_to_file_4 = os.path.abspath('kovel.xlsx')
 
-    wb = openpyxl.load_workbook(path_to_file)  # Грузим наш прайс-лист
-    sheets_list = wb.sheetnames  # Получаем список всех листов в файле
-    sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
-    row_max = sheet_active.max_row  # Получаем количество столбцов
-    # print(type(row_max))
-    column_max = sheet_active.max_column  # Получаем количество строк
+    urllib.request.urlretrieve('http://aparat.ua/xlsx/other.xlsx', 'other.xlsx')
+    path_to_file_5 = os.path.abspath('other.xlsx')
 
-    row_min = 1  # Переменная, отвечающая за номер строки
-    column_min = 1  # Переменная, отвечающая за номер столбца
+    path_to_file = [path_to_file_1, path_to_file_2, path_to_file_3, path_to_file_4, path_to_file_5]
+    products = set()
 
-    while column_min <= column_max:
-        row_min_min = row_min
-        row_max_max = row_max
-        while row_min_min <= row_max_max:
-            row_min_min = str(row_min_min)
+    for path in path_to_file:
 
-            word_column = get_column_letter(column_min)
-            word_column = str(word_column)
-            word_cell = word_column + row_min_min
-            data_from_cell = sheet_active[word_cell].value
-            data_from_cell = str(data_from_cell)
-            regular = search_text
-            result = re.findall(regular.lower(), data_from_cell.lower())
+        regular = str(message.text)  # в переменную answer помещяется то, что ответил пользователь в ТГ
+        wb = openpyxl.load_workbook(path)  # Грузим наш прайс-лист
+        sheets_list = wb.sheetnames  # Получаем список всех листов в файле
+        sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
+        row_max = sheet_active.max_row  # Получаем количество столбцов
+        column_max = sheet_active.max_column  # Получаем количество строк
 
-            if len(result) > 0:
-                sheet_cells.append(word_cell)
-            # каждая ячейка, содержащая в себе нужное нам значение, помещается в лист
+        row_min = 1  # Переменная, отвечающая за номер строки
+        column_min = 1  # Переменная, отвечающая за номер столбца
 
-            row_min_min = int(row_min_min)
-            row_min_min = row_min_min + 1
-        column_min = column_min + 1
-        # алгоритм для сравнения ответа из ТГ и товарами в exel файле
+        while column_min <= column_max:
+            row_min_min = row_min
+            row_max_max = row_max
+            while row_min_min <= row_max_max:
+                row_min_min = str(row_min_min)
 
-    await state.update_data(answer1=sheet_cells)
-    # помещаем в хранилище лист, содержащий в себе адреса всех нужных нам ячеек
+                word_column = get_column_letter(column_min)
+                word_column = str(word_column)
+                word_cell = word_column + row_min_min
+                data_from_cell = sheet_active[word_cell].value
+                data_from_cell = str(data_from_cell)
+                result = re.findall(regular.lower(), data_from_cell.lower())
 
-    if len(sheet_cells) == 0:
+                if len(result) > 0:
+                    products.add(data_from_cell)
+                # каждая ячейка, содержащая в себе нужное нам значение, помещается в лист
+
+                row_min_min = int(row_min_min)
+                row_min_min = row_min_min + 1
+            column_min = column_min + 1
+            # алгоритм для сравнения ответа из ТГ и товарами в exel файле
+    if len(products) == 0:
         await message.answer('Оу, я не нашёл ничего подобного...\nНапишите другое название:')
         await state.reset_state()
         await Questions.search_name.set()
 
-    name_list = []
+    else:
+        products = sorted(list(products))
+        name_list = []
+        if len(products) > 1:
+            i = 1
+            for product in products:
+                name_list.append(f'{product} --- [{i}]')
+                i += 1
 
-    if len(sheet_cells) > 1:
-        i = 1  # добавлю счётчик
-        for name in sheet_cells:
-            if len(name) == 2:
-                name = int(name[1])
-                name_list.append((f'{sheet[name][1].value} --- {[i]}'))
-                # await message.answer(f'{sheet[name][1].value} --- {[i]}')
-            elif len(name) > 2:
-                name = name[1:]
-                name = int(name)
-                name_list.append((f'{sheet[name][1].value} --- {[i]}'))
-                # await message.answer(f'{sheet[name][1].value} --- {[i]}')
-            i += 1
-            await state.update_data(answer2=i)
-            if i > 100:
-                await message.answer('Оу... Список слишком большой, введите название поточнее:')
-                await state.reset_state()
-                await Questions.search_name.set()
-                return
+            try:
+                await message.answer(("\n\n".join(name_list)))
+                await message.answer(f'Я нашел {len(products)} товаров с похожим названием!\nВведите нужный номер:')
+                await state.update_data(answer2=i)
+                await state.update_data(answer1=products)
+                await Questions.serial_num.set()  # запуск второго состоянияx
+            except:
+                await message.answer('Оу... Список слишком большой! Будьте поточнее!')
 
-        await message.answer(("\n\n".join(name_list)))
-        # алгоритм который берёт ячейки из списка, и выдаёт всю нужную информацию в строке с этой ячейкой
-        await message.answer(f'Я нашел {len(sheet_cells)} товаров с похожим названием!\nВведите нужный номер:')
-        await Questions.serial_num.set()  # запуск второго состояния
+        elif len(products) == 1:
+            for path in path_to_file:
+                graph = {}
 
-    elif len(sheet_cells) == 1:
-        sel_num = sheet_cells[0]
-        if len(sel_num) == 2:
-            sel_num = int(sel_num[1])
-            product_name = sheet[sel_num][1].value
-            manufacture = sheet[sel_num][2].value
-            quantity = sheet[sel_num][3].value
-            cost_opt = sheet[sel_num][4].value
-            cost_mem = sheet[sel_num][5].value
-            cost_dlr = sheet[sel_num][6].value
-            cost_grn = sheet[sel_num][7].value
-            # алгоритм который берёт ячейку из списка, и выдаёт всю нужную информацию в строке с этой ячейкой
-            await message.answer(
-                '\n{}\nШифр производителя: {}\nКол-во: {} \nОпт $: {} \nЦена, партнёры, уе: {}\nРРЦ $: {}\nРРЦ $ грн: {}'.format(
-                    product_name,
-                    manufacture,
-                    quantity,
-                    cost_opt.lstrip(),
-                    cost_mem.lstrip(),
-                    cost_dlr.lstrip(),
-                    cost_grn.lstrip()))
+                regular = str(*products)  # в переменную answer помещяется то, что ответил пользователь в ТГ
+                wb = openpyxl.load_workbook(path)  # Грузим наш прайс-лист
+                sheets_list = wb.sheetnames  # Получаем список всех листов в файле
+                sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
+                row_max = sheet_active.max_row  # Получаем количество столбцов
+                column_max = sheet_active.max_column  # Получаем количество строк
+
+                row_min = 1  # Переменная, отвечающая за номер строки
+                column_min = 1  # Переменная, отвечающая за номер столбца
+
+                while column_min <= column_max:
+                    row_min_min = row_min
+                    row_max_max = row_max
+                    while row_min_min <= row_max_max:
+                        row_min_min = str(row_min_min)
+
+                        word_column = get_column_letter(column_min)
+                        word_column = str(word_column)
+                        word_cell = word_column + row_min_min
+                        data_from_cell = sheet_active[word_cell].value
+                        data_from_cell = str(data_from_cell)
+                        result = re.findall(regular.lower(), data_from_cell.lower())
+
+                        if len(result) > 0:
+                            graph['address'] = word_cell
+                            graph['path'] = path
+                        # каждая ячейка, содержащая в себе нужное нам значение, помещается в лист
+
+                        row_min_min = int(row_min_min)
+                        row_min_min = row_min_min + 1
+                    column_min = column_min + 1
+
+                if len(graph) > 0:
+                    if graph['path'] == path_to_file_1:
+
+                        sel_num = graph['address'][1:]
+                        sel_num = int(sel_num)
+                        product_name = sheet_active[sel_num][1].value
+                        manufacture = sheet_active[sel_num][2].value
+                        quantity = sheet_active[sel_num][3].value
+                        cost_opt = sheet_active[sel_num][4].value
+                        cost_mem = sheet_active[sel_num][5].value
+                        cost_dlr = sheet_active[sel_num][6].value
+                        cost_grn = sheet_active[sel_num][7].value
+                        await message.answer(
+                            f'\n"Основной склад"\n\n{product_name}\nШифр производителя: {manufacture}\nКол-во: {quantity} \nОпт $: {cost_opt.lstrip()} \nЦена, партнёры, уе: {cost_mem.lstrip()}\nРРЦ $: {cost_dlr.lstrip()}\nРРЦ $ грн: {cost_grn.lstrip()}')
+
+                    elif graph['path'] == path_to_file_2:
+                        sel_num = graph['address'][1:]
+                        sel_num = int(sel_num)
+                        product_name = sheet_active[sel_num][1].value
+                        manufacture = sheet_active[sel_num][2].value
+                        quantity = sheet_active[sel_num][3].value
+                        cost = sheet_active[sel_num][5].value
+                        opt_cost = sheet_active[sel_num][4].value
+                        await message.answer(
+                            f'\n"На магазине"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт цена в 1с $: {opt_cost}')
+
+                    elif graph['path'] == path_to_file_3:
+                        sel_num = graph['address'][1:]
+                        sel_num = int(sel_num)
+                        product_name = sheet_active[sel_num][1].value
+                        manufacture = sheet_active[sel_num][2].value
+                        quantity = 'Есть в наличии'
+                        cost = float(sheet_active[sel_num][4].value) * 1.1
+                        cost = round(cost)
+                        opt_cost = sheet_active[sel_num][4].value
+                        await message.answer(
+                            f'\n"Борийчук"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
+
+                    elif graph['path'] == path_to_file_4:
+                        sel_num = graph['address'][1:]
+                        sel_num = int(sel_num)
+                        product_name = sheet_active[sel_num][0].value
+                        manufacture = sheet_active[sel_num][1].value
+                        quantity = sheet_active[sel_num][2].value
+                        cost = float(sheet_active[sel_num][3].value) * 1.1
+                        cost = round(cost)
+                        opt_cost = sheet_active[sel_num][3].value
+                        await message.answer(
+                            f'\n"Ковель"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
+
+                    elif graph['path'] == path_to_file_5:
+                        sel_num = graph['address'][1:]
+                        sel_num = int(sel_num)
+                        product_name = sheet_active[sel_num][1].value
+                        manufacture = sheet_active[sel_num][2].value
+                        quantity = 'Есть в наличии'
+                        cost = float(sheet_active[sel_num][4].value) * 1.1
+                        cost = round(cost)
+                        opt_cost = sheet_active[sel_num][4].value
+                        await message.answer(
+                            f'\n"Другие поставщики"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
             await message.answer('Поиск завершён!', reply_markup=menu_1)
             await state.finish()
 
-        elif len(sel_num) > 2:
-            sel_num = sel_num[1:]
-            sel_num = int(sel_num)
-            product_name = sheet[sel_num][1].value
-            manufacture = sheet[sel_num][2].value
-            quantity = sheet[sel_num][3].value
-            cost_opt = sheet[sel_num][4].value
-            cost_mem = sheet[sel_num][5].value
-            cost_dlr = sheet[sel_num][6].value
-            cost_grn = sheet[sel_num][7].value
-            # алгоритм который берёт ячейку из списка, и выдаёт всю нужную информацию в строке с этой ячейкой
-            await message.answer(
-                '\n{}\nШифр производителя: {}\nКол-во: {} \nОпт $: {} \nЦена, партнёры, уе: {}\nРРЦ $: {}\nРРЦ $ грн: {}'.format(
-                    product_name,
-                    manufacture,
-                    quantity,
-                    cost_opt.lstrip(),
-                    cost_mem.lstrip(),
-                    cost_dlr.lstrip(),
-                    cost_grn.lstrip()))
-            await message.answer('Поиск завершён!', reply_markup=menu_1)
-            await state.finish()
