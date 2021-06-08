@@ -26,8 +26,11 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
     name_list = data.get('answer1')
     i = data.get('answer2')
     answer = message.text
+    fin_mess_graph = {}
+
     try:
         for path in path_to_file:
+
             graph = {}
 
             regular = str(name_list[int(answer)-1])  # в переменную answer помещяется то, что ответил пользователь в ТГ
@@ -35,7 +38,7 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
             sheets_list = wb.sheetnames  # Получаем список всех листов в файле
             sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
             row_max = sheet_active.max_row  # Получаем количество столбцов
-            column_max = sheet_active.max_column  # Получаем количество строк
+            column_max = 3
 
             row_min = 1  # Переменная, отвечающая за номер строки
             column_min = 1  # Переменная, отвечающая за номер столбца
@@ -63,65 +66,93 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
                 column_min = column_min + 1
 
             if len(graph) > 0:
+
                 if graph['path'] == path_to_file_1:
 
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
-                    manufacture = sheet_active[sel_num][2].value
+                    main_manufacture = sheet_active[sel_num][2].value
                     quantity = sheet_active[sel_num][3].value
                     cost_opt = sheet_active[sel_num][4].value
                     cost_mem = sheet_active[sel_num][5].value
-                    cost_dlr = sheet_active[sel_num][6].value
-                    cost_grn = sheet_active[sel_num][7].value
+                    main_cost_dlr = sheet_active[sel_num][6].value
+                    main_cost_grn = sheet_active[sel_num][7].value
+
+                    fin_mess_graph['main_cost_dlr'] = f'\nРРЦ долар с главного склада: {main_cost_dlr}'
+                    fin_mess_graph['main_cost_grn'] = f'\nРРЦ грн с главного склада: {main_cost_grn}'
+
                     await message.answer(
-                        f'\n"Основной склад"\n\n{product_name}\nШифр производителя: {manufacture}\nКол-во: {quantity} \nОпт $: {cost_opt.lstrip()} \nЦена, партнёры, уе: {cost_mem.lstrip()}\nРРЦ $: {cost_dlr.lstrip()}\nРРЦ $ грн: {cost_grn.lstrip()}')
+                        f'\n"Основной склад"\n\n{product_name}\nШифр производителя: {main_manufacture}\nКол-во: {quantity} \nОпт $: {cost_opt.lstrip()} \nЦена, партнёры, уе: {cost_mem.lstrip()}\nРРЦ $: {main_cost_dlr.lstrip()}\nРРЦ $ грн: {main_cost_grn.lstrip()}')
+
 
                 elif graph['path'] == path_to_file_2:
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
-                    manufacture = sheet_active[sel_num][2].value
+                    main_manufacture = sheet_active[sel_num][2].value
                     quantity = sheet_active[sel_num][3].value
                     cost = sheet_active[sel_num][5].value
-                    opt_cost = sheet_active[sel_num][4].value
+                    sh_opt_cost = sheet_active[sel_num][4].value
+
+                    fin_mess_graph['sh_opt_cost'] = f'\nСклад "На магазине" опт цена: {sh_opt_cost}'
+
                     await message.answer(
-                        f'\n"На магазине"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт цена в 1с $: {opt_cost}')
+                        f'\n"На магазине"\n\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт цена в 1с $: {sh_opt_cost}')
+
 
                 elif graph['path'] == path_to_file_3:
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
-                    manufacture = sheet_active[sel_num][2].value
-                    quantity = 'Есть в наличии'
+                    main_manufacture = sheet_active[sel_num][2].value
+                    quantity = sheet_active[sel_num][5].value
                     cost = float(sheet_active[sel_num][4].value) * 1.1
                     cost = round(cost)
-                    opt_cost = sheet_active[sel_num][4].value
+                    b_opt_cost = sheet_active[sel_num][4].value
+
+                    fin_mess_graph['b_opt_cost'] = f'\nСклад "Борийчук" опт цена: {b_opt_cost}'
+
                     await message.answer(
-                        f'\n"Борийчук"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
+                        f'\n"Борийчук"\n\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {b_opt_cost}')
+
 
                 elif graph['path'] == path_to_file_4:
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
-                    product_name = sheet_active[sel_num][0].value
-                    manufacture = sheet_active[sel_num][1].value
-                    quantity = sheet_active[sel_num][2].value
-                    cost = float(sheet_active[sel_num][3].value) * 1.1
+                    product_name = sheet_active[sel_num][1].value
+                    main_manufacture = sheet_active[sel_num][2].value
+                    quantity = sheet_active[sel_num][5].value
+                    cost = float(sheet_active[sel_num][4].value) * 1.1
                     cost = round(cost)
-                    opt_cost = sheet_active[sel_num][3].value
+                    k_opt_cost = sheet_active[sel_num][4].value
+
+                    fin_mess_graph['k_opt_cost'] = f'\nСклад "Ковель" опт цена: {k_opt_cost}'
+
                     await message.answer(
-                        f'\n"Ковель"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
+                        f'\n"Ковель"\n\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {k_opt_cost}')
+
 
                 elif graph['path'] == path_to_file_5:
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
-                    manufacture = sheet_active[sel_num][2].value
-                    quantity = 'Есть в наличии'
+                    main_manufacture = sheet_active[sel_num][2].value
+                    quantity = sheet_active[sel_num][4].value
                     cost = float(sheet_active[sel_num][4].value) * 1.1
                     cost = round(cost)
-                    opt_cost = sheet_active[sel_num][4].value
+                    o_opt_cost = sheet_active[sel_num][4].value
+
+                    fin_mess_graph['o_opt_cost'] = f'\nСклад "Другие поставщики" опт цена: {o_opt_cost}'
+
                     await message.answer(
-                        f'\n"Другие поставщики"\n\n{product_name}\nШифр производителя: {manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {opt_cost}')
+                        f'\n"Другие поставщики"\n\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {o_opt_cost}')
+        fin_mess = f'\n{product_name}\n' + f'\nШифр производителя: {main_manufacture}'
+        for cost in fin_mess_graph:
+            fin_mess += fin_mess_graph[cost]
+        await message.answer(fin_mess)
+
+
+
     except:
         await message.answer('Такого номера нет в списке...')
