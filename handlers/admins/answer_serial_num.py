@@ -1,25 +1,28 @@
 import os
 import re
+import urllib
 
 import openpyxl
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from openpyxl.utils import get_column_letter
 
-from data.config import USERS
+from data.config import ADMINS
+from keyboards.default.main_keyboard import menu_1
 from loader import dp
 from states.state_class import Questions
 
 
-@dp.message_handler(state=Questions.serial_num, user_id=USERS)  # указываю второе состояние
+@dp.message_handler(state=Questions.serial_num, user_id=ADMINS)  # указываю второе состояние
 async def answer_serial_num(message: types.Message, state=FSMContext):
     path_to_file_1 = os.path.abspath('out.xlsx')
     path_to_file_2 = os.path.abspath('stock_balance.xlsx ')
     path_to_file_3 = os.path.abspath('boriychuk.xlsx')
-    path_to_file_4 = os.path.abspath('other.xlsx')
+    path_to_file_4 = os.path.abspath('kovel.xlsx')
+    path_to_file_5 = os.path.abspath('other.xlsx')
+    path_to_file_6 = os.path.abspath('garmin.xlsx')
 
-
-    path_to_file = [path_to_file_1, path_to_file_2, path_to_file_3, path_to_file_4]
+    path_to_file = [path_to_file_1, path_to_file_2, path_to_file_3, path_to_file_4, path_to_file_5, path_to_file_6]
 
     data = await state.get_data()
     name_list = data.get('answer1')
@@ -70,37 +73,47 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
 
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
-                    main_product_name = sheet_active[sel_num][1].value
                     product_name = sheet_active[sel_num][1].value
                     main_manufacture = sheet_active[sel_num][2].value
-                    main_quantity = sheet_active[sel_num][3].value
+                    quantity = sheet_active[sel_num][3].value
                     cost_opt = sheet_active[sel_num][4].value
                     cost_mem = sheet_active[sel_num][5].value
                     main_cost_dlr = sheet_active[sel_num][6].value
                     main_cost_grn = sheet_active[sel_num][7].value
 
-                    fin_mess_graph['main_quantity'] = f'\nСклад "Навионика" кол-во: {main_quantity}'
+                    fin_mess_graph['main_cost_dlr'] = f'\nРРЦ долар с главного склада: {main_cost_dlr}'
+                    fin_mess_graph['main_cost_grn'] = f'\nРРЦ грн с главного склада: {main_cost_grn}'
+
+                    await message.answer(
+                        f'\n"Склад Навионика"\n{product_name}\nШифр производителя: {main_manufacture}\nКол-во: {quantity} \nОпт $: {cost_opt.lstrip()} \nЦена, партнёры, уе: {cost_mem.lstrip()}\nРРЦ $: {main_cost_dlr.lstrip()}\nРРЦ $ грн: {main_cost_grn.lstrip()}')
 
                 elif graph['path'] == path_to_file_2:
+
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
                     main_manufacture = sheet_active[sel_num][2].value
-                    sh_quantity = sheet_active[sel_num][3].value
+                    quantity = sheet_active[sel_num][3].value
                     cost = sheet_active[sel_num][5].value
                     try:
                         sh_opt_cost = sheet_active[sel_num][4].value
                         sh_opt_cost = round(float(sh_opt_cost))
+
                     except:
                         sh_opt_cost = 'Уточняйте'
-                    fin_mess_graph['sh_quantity'] = f'\nСклад "Магазин" кол-во: {sh_quantity}'
+
+                    fin_mess_graph['sh_opt_cost'] = f'\nСклад "Магазин" опт цена: {sh_opt_cost}'
+
+                    await message.answer(
+                        f'\n"Склад магазин"\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт цена в 1с $: {sh_opt_cost}')
 
                 elif graph['path'] == path_to_file_3:
+
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
                     main_manufacture = sheet_active[sel_num][2].value
-                    b_quantity = sheet_active[sel_num][5].value
+                    quantity = sheet_active[sel_num][5].value
                     try:
                         cost = float(sheet_active[sel_num][4].value) * 1.1
                         cost = round(cost)
@@ -109,14 +122,38 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
                         cost = 'Уточняйте'
                         b_opt_cost = 'Уточняйте'
 
-                    fin_mess_graph['b_quantity'] = f'\nСклад "Борийчук" кол-во: {b_quantity}'
+                    fin_mess_graph['b_opt_cost'] = f'\nСклад "Борийчук" опт цена: {b_opt_cost}'
+
+                    await message.answer(
+                        f'\n"Склад Борийчук"\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {b_opt_cost}')
 
                 elif graph['path'] == path_to_file_4:
+
                     sel_num = graph['address'][1:]
                     sel_num = int(sel_num)
                     product_name = sheet_active[sel_num][1].value
                     main_manufacture = sheet_active[sel_num][2].value
-                    o_quantity = sheet_active[sel_num][5].value
+                    quantity = sheet_active[sel_num][5].value
+                    try:
+                        cost = float(sheet_active[sel_num][4].value) * 1.1
+                        cost = round(cost)
+                        k_opt_cost = sheet_active[sel_num][4].value
+                    except:
+                        cost = 'Уточняйте'
+                        k_opt_cost = 'Уточняйте'
+
+                    fin_mess_graph['k_opt_cost'] = f'\nСклад "Ковель" опт цена: {k_opt_cost}'
+
+                    await message.answer(
+                        f'\n"Склад Ковель"\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {k_opt_cost}')
+
+                elif graph['path'] == path_to_file_5:
+
+                    sel_num = graph['address'][1:]
+                    sel_num = int(sel_num)
+                    product_name = sheet_active[sel_num][1].value
+                    main_manufacture = sheet_active[sel_num][2].value
+                    quantity = sheet_active[sel_num][5].value
                     try:
                         cost = float(sheet_active[sel_num][4].value) * 1.1
                         cost = round(cost)
@@ -125,24 +162,31 @@ async def answer_serial_num(message: types.Message, state=FSMContext):
                         cost = 'Уточняйте'
                         o_opt_cost = 'Уточняйте'
 
-                    fin_mess_graph['o_quantity'] = f'\nСклад "Другие поставщики" кол-во: {o_quantity}'
+                    fin_mess_graph['o_opt_cost'] = f'\nСклад "Другие поставщики" опт цена: {o_opt_cost}'
 
-        fin_mess = ''
-        try:
-            fin_mess += f'\n{main_product_name}'
-        except:
-            fin_mess += f'\n{product_name}'
+                    await message.answer(
+                        f'\n"Другие поставщики"\n{product_name}\nШифр производителя: {main_manufacture}\nКоличество: {quantity}\nЦена, партнёры, уе: {cost}\nОпт $: {o_opt_cost}')
 
-        fin_mess += f'\nШифр производителя: {main_manufacture}'
 
-        try:
-            fin_mess += f'\nРРЦ долар с главного склада: {main_cost_dlr}'
-            fin_mess += f'\nРРЦ грн с главного склада: {main_cost_grn}'
-            fin_mess += f'\nОпт цена для партнёров: {cost_mem}'
-        except:
-            fin_mess += f'\nОпт цена для партнёров: {cost}'
-        for quantity in fin_mess_graph:
-            fin_mess += fin_mess_graph[quantity]
+                elif graph['path'] == path_to_file_6:
+                    sel_num = graph['address'][1:]
+                    sel_num = int(sel_num)
+                    product_name = sheet_active[sel_num][1].value
+                    main_manufacture = sheet_active[sel_num][2].value
+                    try:
+                        g_opt_cost = sheet_active[sel_num][3].value
+                        g_opt_cost = round(float(g_opt_cost))
+                    except:
+                        g_opt_cost = 'Уточняйте'
+
+                    fin_mess_graph['g_opt_cost'] = f'\nСайт "Garminua" цена: {g_opt_cost}'
+
+                    await message.answer(
+                        f'\n"Сайт Garminua"\n{product_name}\nШифр производителя: {main_manufacture}\nЦена на сайте: {g_opt_cost}')
+
+        fin_mess = f'\n{product_name}' + f'\nШифр производителя: {main_manufacture}'
+        for cost in fin_mess_graph:
+            fin_mess += fin_mess_graph[cost]
         await message.answer(fin_mess)
 
     except:

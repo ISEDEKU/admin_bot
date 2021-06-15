@@ -2,12 +2,12 @@ import requests
 from aiogram import types
 from bs4 import BeautifulSoup
 
-from data.config import USERS
+from data.config import ADMINS
 from keyboards.default.main_keyboard import menu_1
 from loader import dp
 
 
-@dp.message_handler(text='📈 Курс', user_id=USERS)
+@dp.message_handler(text='📈 Курс', user_id=ADMINS)
 async def course(message: types.Message):
     URL = 'https://minfin.com.ua/company/privatbank/currency/'
     HEADERS = {
