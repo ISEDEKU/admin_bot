@@ -114,10 +114,10 @@ async def answer_search_name(message: types.Message, state=FSMContext):
             sheets_list = wb.sheetnames  # Получаем список всех листов в файле
             sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
             row_max = sheet_active.max_row  # Получаем количество столбцов
-            column_max = sheet_active.max_column  # Получаем количество строк
+            column_max = 3
 
             row_min = 1  # Переменная, отвечающая за номер строки
-            column_min = 3
+            column_min = 1
 
             while column_min <= column_max:
                 row_min_min = row_min
@@ -155,8 +155,8 @@ async def answer_search_name(message: types.Message, state=FSMContext):
                     main_cost_dlr = sheet_active[sel_num][6].value
                     main_cost_grn = sheet_active[sel_num][7].value
 
-                    fin_mess_graph['main_cost_dlr'] = f'\nРРЦ долар с главного склада: {main_cost_dlr}'
-                    fin_mess_graph['main_cost_grn'] = f'\nРРЦ грн с главного склада: {main_cost_grn}'
+                    fin_mess_graph['main_cost_grn'] = f'\nРРЦ: {main_cost_grn}'
+                    fin_mess_graph['cost_opt'] = f'\nСклад "Навионика" опт цена: {cost_opt}'
 
                     await message.answer(
                         f'\n"Склад Навионика"\n{product_name}\nШифр производителя: {main_manufacture}\nКол-во: {quantity} \nОпт $: {cost_opt.lstrip()} \nЦена, партнёры, уе: {cost_mem.lstrip()}\nРРЦ $: {main_cost_dlr.lstrip()}\nРРЦ $ грн: {main_cost_grn.lstrip()}')
@@ -252,7 +252,7 @@ async def answer_search_name(message: types.Message, state=FSMContext):
                     await message.answer(
                         f'\n"Сайт Garminua"\n{product_name}\nШифр производителя: {main_manufacture}\nЦена на сайте: {g_opt_cost}')
 
-        fin_mess = f'\n{product_name}' + f'\nШифр производителя: {main_manufacture}'
+        fin_mess = f'\n{product_name}' + f'\nШифр производителя: {main_manufacture}\n'
         for cost in fin_mess_graph:
             fin_mess += fin_mess_graph[cost]
         await message.answer(fin_mess)

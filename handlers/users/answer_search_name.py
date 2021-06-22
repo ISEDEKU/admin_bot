@@ -108,10 +108,10 @@ async def answer_search_name(message: types.Message, state=FSMContext):
             sheets_list = wb.sheetnames  # Получаем список всех листов в файле
             sheet_active = wb[sheets_list[0]]  # Начинаем работать с самым первым
             row_max = sheet_active.max_row  # Получаем количество столбцов
-            column_max = sheet_active.max_column  # Получаем количество строк
+            column_max = 3
 
             row_min = 1  # Переменная, отвечающая за номер строки
-            column_min = 3
+            column_min = 1
 
             while column_min <= column_max:
                 row_min_min = row_min
